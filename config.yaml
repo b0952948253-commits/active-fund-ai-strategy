@@ -1,0 +1,85 @@
+# ================================================================
+# 主動基金 vs ETF 預測系統 — 全域設定
+# ================================================================
+
+project_name: "active_fund_vs_etf"
+
+# --- 資料設定 ---
+etf:
+  ticker: "0050.TW"
+  name: "元大台灣50 ETF"
+
+vix:
+  ticker: "^VIX"
+  name: "CBOE Volatility Index"
+
+active_fund:
+  name: "安聯台灣大壩基金-A類型-新臺幣"
+  # MoneyDJ 基金代碼 (確認後可修改)
+  moneydj_code: "ML099A"
+  # CSV 備援路徑 (如自動抓取失敗，請將 NAV 資料存為此檔)
+  csv_fallback: "data/raw/active_fund_nav.csv"
+
+risk_free_rate:
+  annual: 0.0   # 現金 (0% 報酬)
+
+# --- 時間區間與驗證 ---
+dates:
+  data_start: "2009-01-01"   # 0050.TW 最早有資料的時間點
+
+cv:
+  n_splits: 4                # Walk-Forward 擴張視窗驗證
+  min_train_years: 7         # 初始訓練集至少 7 年 (2009~2015)
+  val_years: 3               # 每次驗證 3 年
+
+# --- 特徵工程 ---
+features:
+  rolling_windows: [26, 52]   # 週數
+  forward_window: 13          # 標籤：未來N週累積超額報酬
+  stop_loss_threshold: -0.08  # 止損線：單月(4週)跌破此數值即標記為需避險
+  force_entry_drawdown: null # 深水區強制進場：取消此機制
+  max_features: 8             # 自動特徵選擇上限
+
+# --- 模型超參數 ---
+models:
+  xgboost:
+    n_estimators: 50
+    max_depth: 2
+    learning_rate: 0.05
+    subsample: 0.7
+    colsample_bytree: 0.7
+    min_child_weight: 5
+    reg_lambda: 10.0          # L2 正規化 (防禦過擬合)
+    eval_metric: "auc"
+    use_label_encoder: false
+    random_state: 42
+
+  random_forest:
+    n_estimators: 50
+    max_depth: 3
+    min_samples_leaf: 5
+    max_features: "sqrt"
+    class_weight: "balanced"
+    oob_score: true
+    n_jobs: -1
+    random_state: 42
+
+  logistic_regression:
+    penalty: "l2"
+    C: 0.1                    # L2 懲罰強度，越小越強
+    class_weight: "balanced"
+    max_iter: 1000
+    random_state: 42
+
+# --- 集成 ---
+ensemble:
+  method: "soft_vote"   # soft_vote | stacking
+  weights:
+    logistic_regression: 0.4
+    xgboost: 0.3
+    random_forest: 0.3
+
+# --- 輸出 ---
+output:
+  results_dir: "results"
+  figures_dir: "results/figures"
