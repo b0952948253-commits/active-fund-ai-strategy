@@ -1,3 +1,5 @@
+![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/b0952948253-commits/active-fund-ai-strategy)
+
 # 主動基金 AI 避險系統
 # Active Fund AI Hedge Strategy
 
